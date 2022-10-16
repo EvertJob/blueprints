@@ -1,0 +1,92 @@
+blueprint:
+  name: Verlichting op lichtsterkte
+  description: Laat een input_select de verlicht inschakelen of uitschakelen aan de hand van een behaalde lichtsterkte. 
+  domain: automation
+  input:
+    lux_sensor:
+      name: Lux sensor
+      description: Sensor die de lichtsterkte registreert.
+      selector:
+        entity:
+          domain: sensor
+          device_class: illuminance
+    switch_on_sensor:
+      name: Inschakel sensor
+      description: Sensor die de inschakelwaarde bepaald.
+      selector:
+        entity:
+          domain: input_number
+    switch_off_sensor:
+      name: Uitschakel sensor
+      description: Sensor die de uitschakelwaarde bepaald.
+      selector:
+        entity:
+          domain: input_number
+    switch_helper:
+      name: Programma sensor
+      description: Sensor die geschakeld moet worden aan de hand vand de lichtsterkte.
+      selector:
+        entity:
+          domain: input_select
+    hysterese_duration_on:      
+      name: Inschakeltijd      
+      description: Hysterese in minuten voordat programma wordt ingeschakeld.      
+      default: 2      
+      selector:        
+        number:
+          min: 1.0
+          max: 15.0
+          unit_of_measurement: min
+          mode: slider
+    hysterese_duration_off:      
+      name: Uitschakeltijd      
+      description: Hysterese in minuten voordat programma wordt uitgeschakeld.      
+      default: 5     
+      selector:        
+        number:
+          min: 1.0
+          max: 30.0
+          unit_of_measurement: min
+          mode: slider
+trigger_variables:
+  sensor: !input lux_sensor
+  switch_on: !input switch_on_sensor
+  switch_off: !input switch_off_sensor
+  
+trigger:
+  - platform: template
+    value_template: >-
+      {{ states(switch_on)|int > states(sensor)|int }}
+    for:
+      seconds: !input 'hysterese_duration_on'
+    id: turn_on
+    enabled: true
+    alias: Inschakelen
+  - platform: template
+    value_template: >-
+      {{ states(sensor)|int > states(switch_off)|int }}
+    for:
+      seconds: !input 'hysterese_duration_off'
+    id: turn_off
+    alias: Uitschakelen
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: turn_on
+        sequence:
+          - service: input_select.select_option
+            data:
+              option: Inschakelen
+            target:
+              entity_id: !input switch_helper
+      - conditions:
+          - condition: trigger
+            id: turn_off
+        sequence:
+          - service: input_select.select_option
+            data:
+              option: Uitschakelen
+            target:
+              entity_id: !input switch_helper
+mode: single
