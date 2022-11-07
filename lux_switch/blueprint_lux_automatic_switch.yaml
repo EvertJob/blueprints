@@ -58,7 +58,7 @@ trigger:
     value_template: >-
       {{ states(switch_on)|int > states(sensor)|int }}
     for:
-      seconds: !input 'hysterese_duration_on'
+      minutes: !input 'hysterese_duration_on'
     id: turn_on
     enabled: true
     alias: Inschakelen
@@ -66,7 +66,7 @@ trigger:
     value_template: >-
       {{ states(sensor)|int > states(switch_off)|int }}
     for:
-      seconds: !input 'hysterese_duration_off'
+      minutes: !input 'hysterese_duration_off'
     id: turn_off
     alias: Uitschakelen
 action:
